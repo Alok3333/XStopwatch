@@ -1,6 +1,7 @@
 import { useState } from "react";
 import "./App.css";
 import { useEffect } from "react";
+import { useRef } from "react";
 
 function App() {
   // State for To store time
@@ -8,29 +9,26 @@ function App() {
 
   // State for to check stopwatch running or not
   const [isRunning, setIsRunning] = useState(false);
+  const timerId = useRef(null);
 
   useEffect(() => {
-    let interValId;
-
     if (isRunning) {
-      interValId = setInterval(() => setTime(time + 1), 10);
+      const id = setInterval(() => {
+        setTime((prevTime) => prevTime + 1);
+      }, 1000);
+      timerId.current = id;
+      return () => clearInterval(id);
+    } else {
+      clearInterval(timerId.current);
+      timerId.current = null;
     }
+  }, [isRunning]);
 
-    return () => clearInterval(interValId);
-  }, [isRunning, time]);
-
-  // Hours calculation
-  const hours = Math.floor(time / 360000);
-
-  // Minutes calculation
-  const minutes = Math.floor((time % 360000) / 6000);
-
-  // Seconds calculation
-  const seconds = Math.floor((time % 6000) / 100);
-
-  // Milliseconds calculation
-  const milliseconds = time % 100;
-
+  const formatTime = () => {
+    const minutes = Math.floor(time / 60);
+    const seconds = time % 60;
+    return `${minutes}:${seconds < 10 ? `0${seconds}` : seconds}`;
+  };
 
   // Hnadle for start and stop timer
   const handleStartStopClick = () => {
@@ -39,16 +37,14 @@ function App() {
 
   // Handle for reset timer
   const handleReset = () => {
+    setIsRunning(false);
     setTime(0);
   };
 
   return (
     <div className="App">
       <h1>Stopwatch</h1>
-      <p>
-        Time: {minutes.toString()}:
-        {seconds.toString().padStart(2, 0)}
-      </p>
+      <p>Time: {formatTime()}</p>
       <div className="btn">
         <button onClick={handleStartStopClick}>
           {isRunning ? "Stop" : "Start"}
